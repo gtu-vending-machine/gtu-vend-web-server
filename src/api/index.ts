@@ -3,23 +3,35 @@ import express from 'express';
 import MessageResponse from '../interfaces/MessageResponse';
 
 // routes import
-import users from './users/users';
-import signUp from './signUp/signUp';
-import login from './login/login';
 import auth from '../middlewares/auth';
 import verifyRole from '../middlewares/verifyRole';
 
-const router = express.Router();
+import loginRouter from './login/login';
+import signUpRouter from './signUp/signUp';
+import usersRouter from './users/users';
+import productsRouter from './products/products';
+import dispensersRouter from './dispensers/dispensers';
+import vendingMachinesRouter from './vendinMachines/vendinMachines';
 
-router.get<{}, MessageResponse>('/', (req, res) => {
+const api = express.Router();
+
+api.get<{}, MessageResponse>('/', (req, res) => {
   res.json({
     message: 'API - 👋🌎🌍🌏',
   });
 });
 
-// other routes will be added here to the router
-router.use('/users', auth, verifyRole(['admin']), users);
-router.use('/signUp', signUp);
-router.use('/login', login);
+// other routes will be added here to the api
+api.use('/users', auth, verifyRole(['admin']), usersRouter);
+api.use('/signUp', signUpRouter);
+api.use('/login', loginRouter);
+api.use('/products', auth, verifyRole(['admin', 'user']), productsRouter);
+api.use('/dispensers', auth, verifyRole(['admin', 'user']), dispensersRouter);
+api.use(
+  '/vendingMachines',
+  auth,
+  verifyRole(['admin', 'user']),
+  vendingMachinesRouter,
+);
 
-export default router;
+export default api;
