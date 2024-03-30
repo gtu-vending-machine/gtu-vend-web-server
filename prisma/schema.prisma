@@ -12,11 +12,85 @@ datasource db {
 
 // role enum
 model User {
-  id    Int     @id @default(autoincrement())
+  id       Int     @id @default(autoincrement())
   username String  @unique
-  password  String
-  token     String?
-  name  String
+  password String
+  token    String?
+  name     String
   // role: admin, user, vendingMachine - Lists and ENUMS are not supported by Prisma with SQLite
-  role  String @default("user") 
+  role     String  @default("user")
+
+  // each user can have multiple transactions
+  transactions Transaction[]
+
+  balance Int @default(0)
+}
+
+model Product {
+  id    Int     @id @default(autoincrement())
+  name  String  @unique
+  price Int
+  // image as base64
+  image String?
+
+  // each product can be in multiple dispensers
+  dispensers Dispenser[]
+
+  // each product can have multiple transactions
+  transactions Transaction[]
+}
+
+model Dispenser {
+  id    Int @id @default(autoincrement())
+  index Int
+
+  // each dispenser has multiple products
+  product   Product? @relation(fields: [productId], references: [id])
+  productId Int?
+  stock     Int      @default(0)
+
+  // each dispenser belongs to a vending machine
+  vendingMachine   VendingMachine @relation(fields: [vendingMachineId], references: [id])
+  vendingMachineId Int
+
+  // each dispenser can have multiple transactions
+  transactions Transaction[]
+
+  // index and dispenserId should be unique together
+  @@unique([index, vendingMachineId])
+}
+
+model VendingMachine {
+  id         Int         @id @default(autoincrement())
+  name       String      @unique
+  // each vending machine has multiple dispensers
+  dispensers Dispenser[]
+
+  // each vending machine can have multiple transactions
+  transactions Transaction[]
+}
+
+model Transaction {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  // transaction belongs to a user
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
+
+  product   Product @relation(fields: [productId], references: [id])
+  productId Int
+
+  dispenser   Dispenser @relation(fields: [dispenserId], references: [id])
+  dispenserId Int
+
+  // transaction belongs to a vending machine
+  vendingMachine   VendingMachine @relation(fields: [vendingMachineId], references: [id])
+  vendingMachineId Int
+
+  // confirm
+  hasConfirmed Boolean @default(false)
+
+  // each transaction has a unique code
+  code String @unique
 }
