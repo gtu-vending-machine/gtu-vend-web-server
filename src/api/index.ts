@@ -6,12 +6,12 @@ import MessageResponse from '../interfaces/MessageResponse';
 import auth from '../middlewares/auth';
 import verifyRole from '../middlewares/verifyRole';
 
-import loginRouter from './login/login';
-import signUpRouter from './signUp/signUp';
-import usersRouter from './users/users';
-import productsRouter from './products/products';
-import dispensersRouter from './dispensers/dispensers';
-import vendingMachinesRouter from './vendinMachines/vendinMachines';
+import loginRouter from './login';
+import signUpRouter from './signUp';
+import usersRouter from './users';
+import productsRouter from './products';
+import dispensersRouter from './dispensers';
+import vendingMachinesRouter from './vendinMachines';
 
 const api = express.Router();
 
