@@ -1,6 +1,6 @@
 // utils/generateJwt.ts
+import { User } from '@prisma/client';
 import jwt from 'jsonwebtoken';
-import User from '../interfaces/User';
 require('dotenv').config();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';

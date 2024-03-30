@@ -3,20 +3,23 @@ import { prisma } from '../../prismaClient';
 import ErrorResponse from '../../interfaces/ErrorResponse';
 import { generateJwt } from '../../utils/generateJwt';
 import bcrypt from 'bcryptjs';
-import User, { LoginResponse, Role } from '../../interfaces/User';
+import { LoginRequest, LoginResponse } from '../../interfaces/User';
+import { missingFields } from '../../utils/errorMessages';
 
-const router = express.Router();
-
-type LoginRequest = Pick<User, 'username' | 'password'>;
+const loginRouter = express.Router();
 
 const invalidUsernameOrPassword = (res: express.Response) => {
   return res.status(401).json({ message: 'Invalid username or password' });
 };
 
-router.post<{}, LoginResponse | ErrorResponse, LoginRequest>(
+loginRouter.post<{}, LoginResponse | ErrorResponse, LoginRequest>(
   '/',
   async (req, res, next) => {
     const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json(missingFields(['username', 'password']));
+    }
 
     try {
       const user = await prisma.user.findUnique({
@@ -34,10 +37,7 @@ router.post<{}, LoginResponse | ErrorResponse, LoginRequest>(
       }
 
       // cast user.role to Role, if it's not a valid Role, it will throw an error
-      const role = user.role as Role;
-      if (!role) {
-        return res.status(500).json({ message: 'User role is not defined' });
-      }
+      const role = user.role;
 
       // Generate a JWT token
       const token = generateJwt({ ...user, role });
@@ -49,6 +49,7 @@ router.post<{}, LoginResponse | ErrorResponse, LoginRequest>(
         user: {
           id: user.id,
           token,
+          role: user.role,
         },
       });
     } catch (error) {
@@ -58,4 +59,4 @@ router.post<{}, LoginResponse | ErrorResponse, LoginRequest>(
   },
 );
 
-export default router;
+export default loginRouter;

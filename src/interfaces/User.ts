@@ -1,17 +1,23 @@
+import { User } from '@prisma/client';
 import MessageResponse from './MessageResponse';
 
 type Role = 'admin' | 'user';
-export default interface User {
-  id: number;
-  username: string;
-  password: string;
-  name: string;
-  token?: string | null;
-  role: Role;
-}
 
-interface LoginResponse extends MessageResponse {
-  user: Pick<User, 'id' | 'token'>;
-}
+type LoginRequest = Pick<User, 'username' | 'password'>;
+type LoginResponse = MessageResponse & {
+  user: Pick<User, 'id' | 'token' | 'role'>;
+};
 
-export { LoginResponse, Role };
+type SignUpRequest = Pick<User, 'username' | 'password' | 'name' | 'role'>;
+type SignUpResponse = LoginResponse;
+
+type UserResponse = Pick<User, 'id' | 'name' | 'username' | 'role' | 'balance'>;
+
+export {
+  LoginResponse,
+  Role,
+  LoginRequest,
+  SignUpRequest,
+  SignUpResponse,
+  UserResponse,
+};
