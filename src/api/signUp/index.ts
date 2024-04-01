@@ -53,11 +53,11 @@ signUpRouter.post<{}, SignUpResponse | ErrorResponse, SignUpRequest>(
       await prisma.user.update({ where: { id: user.id }, data: { token } });
 
       return res.json({
-        message: 'Signup successful',
         user: {
           id: user.id,
           token,
           role: user.role,
+          username: user.username,
         },
       });
     } catch (error) {

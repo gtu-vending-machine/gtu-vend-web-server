@@ -45,11 +45,11 @@ loginRouter.post<{}, LoginResponse | ErrorResponse, LoginRequest>(
       await prisma.user.update({ where: { id: user.id }, data: { token } });
 
       return res.json({
-        message: 'Login successful',
         user: {
           id: user.id,
           token,
           role: user.role,
+          username: user.username,
         },
       });
     } catch (error) {
