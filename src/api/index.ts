@@ -21,6 +21,10 @@ api.get<{}, MessageResponse>('/', (req, res) => {
   });
 });
 
+api.get<{}, MessageResponse>('/auth', auth, (req, res) => {
+  res.json(req.body.user);
+});
+
 // other routes will be added here to the api
 api.use('/users', auth, verifyRole(['admin']), usersRouter);
 api.use('/signUp', signUpRouter);
