@@ -1,11 +1,10 @@
 import { User } from '@prisma/client';
-import MessageResponse from './MessageResponse';
 
 type Role = 'admin' | 'user';
 
 type LoginRequest = Pick<User, 'username' | 'password'>;
-type LoginResponse = MessageResponse & {
-  user: Pick<User, 'id' | 'token' | 'role'>;
+type LoginResponse = {
+  user: Pick<User, 'id' | 'username' | 'token' | 'role'>;
 };
 
 type SignUpRequest = Pick<User, 'username' | 'password' | 'name' | 'role'>;
