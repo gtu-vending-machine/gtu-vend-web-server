@@ -24,6 +24,8 @@ model User {
   transactions Transaction[]
 
   balance Int @default(0)
+
+  
 }
 
 model Product {
