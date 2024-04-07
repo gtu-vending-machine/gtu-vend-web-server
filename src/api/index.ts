@@ -11,7 +11,7 @@ import signUpRouter from './signUp';
 import usersRouter from './users';
 import productsRouter from './products';
 import dispensersRouter from './dispensers';
-import vendingMachinesRouter from './vendinMachines';
+import vendingMachinesRouter from './vendingMachines';
 
 const api = express.Router();
 
