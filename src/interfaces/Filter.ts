@@ -5,22 +5,24 @@ type Pagination = {
   };
 };
 
+type OrderOption = 'asc' | 'desc';
+
 type Sort = {
   sort?: {
     field: string;
-    order: 'asc' | 'desc';
+    order: OrderOption;
   };
 };
 
 // filter options: equal, not equal, greater than, less than, includes, starts with
-type FilterOptions = 'eq' | 'gt' | 'lt' | 'contains' | 'startsWith';
+type FilterOption = 'eq' | 'gt' | 'lt' | 'contains' | 'startsWith';
 
 type Filter = {
   filter?: {
     field: string;
     value: string | number;
-    option: FilterOptions;
+    option: FilterOption;
   }[];
 };
 
-export { Pagination, Sort, Filter, FilterOptions };
+export { Pagination, Sort, Filter, FilterOption, OrderOption };

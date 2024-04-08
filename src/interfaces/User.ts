@@ -23,11 +23,18 @@ interface BalanceUpdateRequest extends Request {
 // combine FilterByUser with sort and pagination
 type UserFilter = Filter & Sort & Pagination;
 
-// filtered users
-interface FilteredUsersRequest extends Request {
+// query users
+interface QueryUsersRequest extends Request {
   body: {
     query: UserFilter;
   };
+}
+
+interface AuthResponse {
+  username: string;
+  role: string;
+  iat: string;
+  exp: string;
 }
 
 export {
@@ -39,5 +46,6 @@ export {
   UserResponse,
   BalanceUpdateRequest,
   UserFilter,
-  FilteredUsersRequest,
+  QueryUsersRequest,
+  AuthResponse,
 };
