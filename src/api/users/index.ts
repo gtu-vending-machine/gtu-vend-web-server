@@ -1,13 +1,13 @@
+/* eslint-disable @typescript-eslint/indent */
 import express from 'express';
 import { prisma } from '../../prismaClient';
 import {
   BalanceUpdateRequest,
   UserResponse,
-  FilteredUsersRequest,
+  QueryUsersRequest,
 } from '../../interfaces/User';
 import ErrorResponse from '../../interfaces/ErrorResponse';
-import { FilterOptions } from '../../interfaces/Filter';
-import { sortFunction } from '../../utils/sortFunction';
+import { FilterOption } from '../../interfaces/Filter';
 
 const usersRouter = express.Router();
 
@@ -58,13 +58,60 @@ usersRouter.get<{ id: string }, UserResponse | null>(
   },
 );
 
-usersRouter.post<{}, UserResponse[] | []>(
-  '/filtered',
-  async (req: FilteredUsersRequest, res, next) => {
+// DELETE /users/:id
+usersRouter.delete<{ id: string }, UserResponse | ErrorResponse>(
+  '/:id',
+  async (req, res, next) => {
+    const { id } = req.params;
+    try {
+      // check if user exists and not admin
+      const userToDelete = await prisma.user.findUnique({
+        where: { id: Number(id) },
+        select: {
+          role: true,
+        },
+      });
+
+      if (!userToDelete) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      if (userToDelete.role === 'admin') {
+        return res.status(403).json({
+          message: 'Admin cannot be deleted',
+        });
+      }
+
+      const user = await prisma.user.delete({
+        where: { id: Number(id) },
+        select: {
+          id: true,
+          name: true,
+          username: true,
+          role: true,
+          balance: true,
+        },
+      });
+      return res.json(user);
+    } catch (error) {
+      console.error(error);
+      next(error);
+    }
+  },
+);
+
+// user response with counts
+interface UserResponseWithCount {
+  users: UserResponse[];
+  count: number;
+}
+usersRouter.post<{}, UserResponseWithCount | []>(
+  '/query',
+  async (req: QueryUsersRequest, res, next) => {
     const { query } = req.body;
     const { filter, pagination, sort } = query;
 
-    const filterOptions: FilterOptions[] = [
+    const filterOption: FilterOption[] = [
       'eq',
       'gt',
       'lt',
@@ -82,7 +129,7 @@ usersRouter.post<{}, UserResponse[] | []>(
         filter.forEach((f) => {
           // Ensure valid field names and options
 
-          if (!fields.includes(f.field) || !filterOptions.includes(f.option)) {
+          if (!fields.includes(f.field) || !filterOption.includes(f.option)) {
             return; // Skip invalid filters
           }
           switch (f.option) {
@@ -106,7 +153,7 @@ usersRouter.post<{}, UserResponse[] | []>(
       }
 
       // Handle pagination logic
-      const { page = 1, pageSize = 10 } = pagination || {}; // Set defaults
+      const { page = 1, pageSize = 5 } = pagination || {}; // Set defaults
       const skip = (page - 1) * pageSize; // Calculate skip offset
 
       const users = await prisma.user.findMany({
@@ -120,13 +167,15 @@ usersRouter.post<{}, UserResponse[] | []>(
         },
         skip: skip,
         take: pageSize,
+        orderBy: sort ? { [sort.field]: sort.order } : undefined,
       });
 
-      // sort the users based on the sort input (if provided)
-      // i don't use orderBy since it is case sensitive
-      sortFunction<UserResponse>(sort, users);
+      // get the total count of users with the applied filters (without pagination)
+      const count = await prisma.user.count({
+        where: whereClause,
+      });
 
-      res.json(users);
+      res.json({ users, count });
     } catch (error) {
       console.error(error);
       next(error);
@@ -134,43 +183,41 @@ usersRouter.post<{}, UserResponse[] | []>(
   },
 );
 
-usersRouter.post<{ id: string }, Omit<UserResponse, 'role'> | ErrorResponse>(
-  '/:id/addBalance',
-  async (req: BalanceUpdateRequest, res, next) => {
-    const { id } = req.params;
-    const { amount } = req.body;
+usersRouter.post<
+  { id: string },
+  Pick<UserResponse, 'balance' | 'id'> | ErrorResponse
+>('/:id/addBalance', async (req: BalanceUpdateRequest, res, next) => {
+  const { id } = req.params;
+  const { amount } = req.body;
 
-    try {
-      // get users current balance
-      const user = await prisma.user.findUnique({
-        where: { id: Number(id) },
-        select: {
-          balance: true,
-        },
-      });
+  try {
+    // get users current balance
+    const user = await prisma.user.findUnique({
+      where: { id: Number(id) },
+      select: {
+        balance: true,
+      },
+    });
 
-      // if user does not exist, throw an error
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-
-      const updatedUser = await prisma.user.update({
-        where: { id: Number(id) },
-        data: { balance: user.balance + amount },
-        select: {
-          id: true,
-          name: true,
-          username: true,
-          balance: true,
-        },
-      });
-
-      res.json(updatedUser);
-    } catch (error) {
-      console.error(error);
-      next(error);
+    // if user does not exist, throw an error
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
-  },
-);
+
+    const updatedUser = await prisma.user.update({
+      where: { id: Number(id) },
+      data: { balance: user.balance + amount },
+      select: {
+        id: true,
+        balance: true,
+      },
+    });
+
+    res.json(updatedUser);
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+});
 
 export default usersRouter;
