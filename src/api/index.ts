@@ -12,6 +12,7 @@ import usersRouter from './users';
 import productsRouter from './products';
 import dispensersRouter from './dispensers';
 import vendingMachinesRouter from './vendingMachines';
+import { AuthResponse } from '../interfaces/User';
 
 const api = express.Router();
 
@@ -21,8 +22,14 @@ api.get<{}, MessageResponse>('/', (req, res) => {
   });
 });
 
-api.get<{}, MessageResponse>('/auth', auth, (req, res) => {
-  res.json(req.body.user);
+api.get<{}, AuthResponse | MessageResponse>('/auth', auth, (req, res) => {
+  const iat = new Date(req.body.user.iat * 1000).toUTCString(); // issued at
+  const exp = new Date(req.body.user.exp * 1000).toUTCString(); // expiration
+  res.json({
+    ...req.body.user,
+    iat,
+    exp,
+  });
 });
 
 // other routes will be added here to the api
