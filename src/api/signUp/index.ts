@@ -40,7 +40,7 @@ signUpRouter.post<{}, SignUpResponse | ErrorResponse, SignUpRequest>(
       const user = await prisma.user.create({
         data: {
           name: name,
-          username: username,
+          username: username.toLowerCase(),
           password: hashedPassword,
           role: role,
         },
