@@ -1,3 +1,5 @@
+import { Request } from 'express';
+
 type Pagination = {
   pagination?: {
     page: number;
@@ -17,12 +19,28 @@ type Sort = {
 // filter options: equal, not equal, greater than, less than, includes, starts with
 type FilterOption = 'eq' | 'gt' | 'lt' | 'contains' | 'startsWith';
 
-type Filter = {
+type Filter<T> = {
   filter?: {
-    field: string;
+    field: keyof T;
     value: string | number;
     option: FilterOption;
   }[];
 };
 
-export { Pagination, Sort, Filter, FilterOption, OrderOption };
+type Query<T> = Filter<T> & Sort & Pagination;
+
+interface QueryRequest<T> extends Request {
+  body: {
+    query: Query<T>;
+  };
+}
+
+export {
+  Pagination,
+  Sort,
+  Filter,
+  FilterOption,
+  OrderOption,
+  Query,
+  QueryRequest,
+};
