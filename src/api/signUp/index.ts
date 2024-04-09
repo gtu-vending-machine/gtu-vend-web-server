@@ -58,6 +58,7 @@ signUpRouter.post<{}, SignUpResponse | ErrorResponse, SignUpRequest>(
           token,
           role: user.role,
           username: user.username,
+          balance: user.balance,
         },
       });
     } catch (error) {

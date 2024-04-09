@@ -50,6 +50,7 @@ loginRouter.post<{}, LoginResponse | ErrorResponse, LoginRequest>(
           token,
           role: user.role,
           username: user.username,
+          balance: user.balance,
         },
       });
     } catch (error) {
