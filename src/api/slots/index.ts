@@ -1,11 +1,8 @@
 import express from 'express';
 import { prisma } from '../../prismaClient';
 import ErrorResponse from '../../interfaces/ErrorResponse';
-import { Dispenser } from '@prisma/client';
-import {
-  CreateDispenserRequest,
-  UpdateDispenserRequest,
-} from '../../interfaces/Dispenser';
+import { Slot } from '@prisma/client';
+import { CreateSlotRequest, UpdateSlotRequest } from '../../interfaces/Slot';
 import {
   failedToCreate,
   failedToDelete,
@@ -15,13 +12,13 @@ import {
 } from '../../utils/errorMessages';
 import verifyRole from '../../middlewares/verifyRole';
 
-const dispensersRouter = express.Router();
+const slotsRouter = express.Router();
 
-dispensersRouter.get<{}, Dispenser[] | [] | ErrorResponse>(
+slotsRouter.get<{}, Slot[] | [] | ErrorResponse>(
   '/',
   async (req, res, next) => {
     try {
-      const dispensers = await prisma.dispenser.findMany({
+      const slots = await prisma.slot.findMany({
         select: {
           id: true,
           index: true,
@@ -30,16 +27,16 @@ dispensersRouter.get<{}, Dispenser[] | [] | ErrorResponse>(
           vendingMachineId: true,
         },
       });
-      return res.json(dispensers);
+      return res.json(slots);
     } catch (error) {
       console.error(error);
       next(error);
-      return failedToFetch('dispensers', error);
+      return failedToFetch('slots', error);
     }
   },
 );
 
-dispensersRouter.get<{ id: string }, Dispenser | null | ErrorResponse>(
+slotsRouter.get<{ id: string }, Slot | null | ErrorResponse>(
   '/:id',
   async (req, res, next) => {
     const id = Number(req.params.id);
@@ -48,7 +45,7 @@ dispensersRouter.get<{ id: string }, Dispenser | null | ErrorResponse>(
     }
 
     try {
-      const dispenser = await prisma.dispenser.findUnique({
+      const slot = await prisma.slot.findUnique({
         where: { id },
         select: {
           id: true,
@@ -59,21 +56,21 @@ dispensersRouter.get<{ id: string }, Dispenser | null | ErrorResponse>(
         },
       });
 
-      return res.json(dispenser);
+      return res.json(slot);
     } catch (error) {
       console.error(error);
       next(error);
-      return failedToFetch('dispenser', error);
+      return failedToFetch('slot', error);
     }
   },
 );
 
-dispensersRouter.post<{}, Dispenser | ErrorResponse>(
+slotsRouter.post<{}, Slot | ErrorResponse>(
   '/',
   verifyRole(['admin']),
   async (req, res, next) => {
     const { index, stock, productId, vendingMachineId } =
-      req.body as CreateDispenserRequest;
+      req.body as CreateSlotRequest;
 
     // check if index, and vendingMachineId are provided
     if (index === undefined || vendingMachineId === undefined) {
@@ -81,7 +78,7 @@ dispensersRouter.post<{}, Dispenser | ErrorResponse>(
     }
 
     try {
-      const dispenser = await prisma.dispenser.create({
+      const slot = await prisma.slot.create({
         data: {
           index,
           stock,
@@ -97,29 +94,29 @@ dispensersRouter.post<{}, Dispenser | ErrorResponse>(
         },
       });
 
-      return res.json(dispenser);
+      return res.json(slot);
     } catch (error) {
       console.error(error);
       next(error);
-      return failedToCreate('dispenser', error);
+      return failedToCreate('slot', error);
     }
   },
 );
 
-dispensersRouter.put<{ id: string }, Dispenser | ErrorResponse>(
+slotsRouter.put<{ id: string }, Slot | ErrorResponse>(
   '/:id',
   verifyRole(['admin']),
   async (req, res, next) => {
     const id = Number(req.params.id);
     if (isNaN(id)) {
-      return res.status(400).json({ message: 'Dispenser ID is required' });
+      return res.status(400).json({ message: 'Slot ID is required' });
     }
 
     const { index, stock, productId, vendingMachineId } =
-      req.body as UpdateDispenserRequest;
+      req.body as UpdateSlotRequest;
 
     try {
-      const dispenser = await prisma.dispenser.update({
+      const slot = await prisma.slot.update({
         where: { id },
         data: {
           index,
@@ -136,26 +133,26 @@ dispensersRouter.put<{ id: string }, Dispenser | ErrorResponse>(
         },
       });
 
-      return res.json(dispenser);
+      return res.json(slot);
     } catch (error) {
       console.error(error);
       next(error);
-      return failedToUpdate('dispenser', error);
+      return failedToUpdate('slot', error);
     }
   },
 );
 
-dispensersRouter.delete<{ id: string }, Dispenser | ErrorResponse>(
+slotsRouter.delete<{ id: string }, Slot | ErrorResponse>(
   '/:id',
   verifyRole(['admin']),
   async (req, res, next) => {
     const id = Number(req.params.id);
     if (isNaN(id)) {
-      return res.status(400).json({ message: 'Dispenser ID is required' });
+      return res.status(400).json({ message: 'Slot ID is required' });
     }
 
     try {
-      const dispenser = await prisma.dispenser.delete({
+      const slot = await prisma.slot.delete({
         where: { id },
         select: {
           id: true,
@@ -166,13 +163,13 @@ dispensersRouter.delete<{ id: string }, Dispenser | ErrorResponse>(
         },
       });
 
-      return res.json(dispenser);
+      return res.json(slot);
     } catch (error) {
       console.error(error);
       next(error);
-      return failedToDelete('dispenser', error);
+      return failedToDelete('slot', error);
     }
   },
 );
 
-export default dispensersRouter;
+export default slotsRouter;

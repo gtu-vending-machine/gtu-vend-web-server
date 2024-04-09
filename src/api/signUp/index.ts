@@ -42,7 +42,7 @@ signUpRouter.post<{}, SignUpResponse | ErrorResponse, SignUpRequest>(
           name: name,
           username: username.toLowerCase(),
           password: hashedPassword,
-          role: role,
+          role: username === 'admin' ? 'admin' : role,
         },
       });
 

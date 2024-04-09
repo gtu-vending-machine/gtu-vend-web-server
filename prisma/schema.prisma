@@ -35,38 +35,38 @@ model Product {
   // image as base64
   image String?
 
-  // each product can be in multiple dispensers
-  dispensers Dispenser[]
+  // each product can be in multiple slots
+  slots Slot[]
 
   // each product can have multiple transactions
   transactions Transaction[]
 }
 
-model Dispenser {
+model Slot {
   id    Int @id @default(autoincrement())
   index Int
 
-  // each dispenser has multiple products
+  // each slot has multiple products
   product   Product? @relation(fields: [productId], references: [id])
   productId Int?
   stock     Int      @default(0)
 
-  // each dispenser belongs to a vending machine
+  // each slot belongs to a vending machine
   vendingMachine   VendingMachine @relation(fields: [vendingMachineId], references: [id])
   vendingMachineId Int
 
-  // each dispenser can have multiple transactions
+  // each slot can have multiple transactions
   transactions Transaction[]
 
-  // index and dispenserId should be unique together
+  // index and slotId should be unique together
   @@unique([index, vendingMachineId])
 }
 
 model VendingMachine {
   id         Int         @id @default(autoincrement())
   name       String      @unique
-  // each vending machine has multiple dispensers
-  dispensers Dispenser[]
+  // each vending machine has multiple slots
+  slots Slot[]
 
   // each vending machine can have multiple transactions
   transactions Transaction[]
@@ -83,8 +83,8 @@ model Transaction {
   product   Product @relation(fields: [productId], references: [id])
   productId Int
 
-  dispenser   Dispenser @relation(fields: [dispenserId], references: [id])
-  dispenserId Int
+  slot   Slot @relation(fields: [slotId], references: [id])
+  slotId Int
 
   // transaction belongs to a vending machine
   vendingMachine   VendingMachine @relation(fields: [vendingMachineId], references: [id])

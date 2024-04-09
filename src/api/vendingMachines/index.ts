@@ -2,7 +2,7 @@
 import express from 'express';
 import { prisma } from '../../prismaClient';
 import ErrorResponse from '../../interfaces/ErrorResponse';
-import { VendingMachine, Dispenser } from '@prisma/client';
+import { VendingMachine, Slot } from '@prisma/client';
 
 import {
   CreateVendingMachineRequest,
@@ -28,7 +28,7 @@ vendingMachinesRouter.get<{}, VendingMachine[] | [] | ErrorResponse>(
         select: {
           id: true,
           name: true,
-          dispensers: {
+          slots: {
             select: {
               id: true,
               index: true,
@@ -62,7 +62,7 @@ vendingMachinesRouter.get<
       select: {
         id: true,
         name: true,
-        dispensers: {
+        slots: {
           select: {
             id: true,
             index: true,
@@ -81,7 +81,7 @@ vendingMachinesRouter.get<
   }
 });
 
-// if dispenserNumber is provided, create dispensers
+// if slotNumber is provided, create slots
 // and connect them to the vending machine, otherwise
 // create only the vending machine
 vendingMachinesRouter.post<{}, VendingMachine | ErrorResponse | null>(
@@ -103,7 +103,7 @@ vendingMachinesRouter.post<{}, VendingMachine | ErrorResponse | null>(
         select: {
           id: true,
           name: true,
-          dispensers: {
+          slots: {
             select: {
               id: true,
               index: true,
@@ -112,22 +112,22 @@ vendingMachinesRouter.post<{}, VendingMachine | ErrorResponse | null>(
         },
       });
 
-      // get dispenserNumber from query params
-      // usage: /vendingMachines?dispenserNumber=3
-      const dispenserNumber = Number(req.query.dispenserNumber);
+      // get slotNumber from query params
+      // usage: /vendingMachines?slotNumber=3
+      const slotNumber = Number(req.query.slotNumber);
 
-      // create dispensers and connect them to vending machine
-      if (dispenserNumber) {
-        const dispensers: Dispenser[] = [];
-        for (let i = 0; i < dispenserNumber; i++) {
-          const dispenser = await prisma.dispenser.create({
+      // create slots and connect them to vending machine
+      if (slotNumber) {
+        const slots: Slot[] = [];
+        for (let i = 0; i < slotNumber; i++) {
+          const slot = await prisma.slot.create({
             data: {
               index: i,
               vendingMachineId: vendingMachine.id,
             },
           });
-          dispensers.push(dispenser);
-          vendingMachine.dispensers.push(dispenser);
+          slots.push(slot);
+          vendingMachine.slots.push(slot);
         }
       }
 

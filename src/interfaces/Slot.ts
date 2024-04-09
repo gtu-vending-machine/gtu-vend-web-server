@@ -1,16 +1,16 @@
 /* eslint-disable @typescript-eslint/indent */
-import { Dispenser } from '@prisma/client';
+import { Slot } from '@prisma/client';
 
 // type CreateProductRequest = Pick<Product, 'name' | 'price' | 'image'>;
 // type UpdateProductRequest = Partial<CreateProductRequest>;
 
 // export { CreateProductRequest, UpdateProductRequest };
 
-type CreateDispenserRequest = Pick<
-  Dispenser,
+type CreateSlotRequest = Pick<
+  Slot,
   'index' | 'productId' | 'stock' | 'vendingMachineId'
 >;
 
-type UpdateDispenserRequest = Partial<CreateDispenserRequest>;
+type UpdateSlotRequest = Partial<CreateSlotRequest>;
 
-export { CreateDispenserRequest, UpdateDispenserRequest };
+export { CreateSlotRequest, UpdateSlotRequest };

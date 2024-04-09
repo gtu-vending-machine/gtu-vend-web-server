@@ -18,14 +18,14 @@ CREATE TABLE "Product" (
 );
 
 -- CreateTable
-CREATE TABLE "Dispenser" (
+CREATE TABLE "Slot" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "index" INTEGER NOT NULL,
     "productId" INTEGER,
     "stock" INTEGER NOT NULL DEFAULT 0,
     "vendingMachineId" INTEGER NOT NULL,
-    CONSTRAINT "Dispenser_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT "Dispenser_vendingMachineId_fkey" FOREIGN KEY ("vendingMachineId") REFERENCES "VendingMachine" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT "Slot_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT "Slot_vendingMachineId_fkey" FOREIGN KEY ("vendingMachineId") REFERENCES "VendingMachine" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -40,13 +40,13 @@ CREATE TABLE "Transaction" (
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "userId" INTEGER NOT NULL,
     "productId" INTEGER NOT NULL,
-    "dispenserId" INTEGER NOT NULL,
+    "slotId" INTEGER NOT NULL,
     "vendingMachineId" INTEGER NOT NULL,
     "hasConfirmed" BOOLEAN NOT NULL DEFAULT false,
     "code" TEXT NOT NULL,
     CONSTRAINT "Transaction_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT "Transaction_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT "Transaction_dispenserId_fkey" FOREIGN KEY ("dispenserId") REFERENCES "Dispenser" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT "Transaction_slotId_fkey" FOREIGN KEY ("slotId") REFERENCES "Slot" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT "Transaction_vendingMachineId_fkey" FOREIGN KEY ("vendingMachineId") REFERENCES "VendingMachine" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
@@ -57,7 +57,7 @@ CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
 CREATE UNIQUE INDEX "Product_name_key" ON "Product"("name");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Dispenser_index_vendingMachineId_key" ON "Dispenser"("index", "vendingMachineId");
+CREATE UNIQUE INDEX "Slot_index_vendingMachineId_key" ON "Slot"("index", "vendingMachineId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "VendingMachine_name_key" ON "VendingMachine"("name");

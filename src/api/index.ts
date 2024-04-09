@@ -10,7 +10,7 @@ import loginRouter from './login';
 import signUpRouter from './signUp';
 import usersRouter from './users';
 import productsRouter from './products';
-import dispensersRouter from './dispensers';
+import slotsRouter from './slots';
 import vendingMachinesRouter from './vendingMachines';
 import { AuthResponse } from '../interfaces/User';
 
@@ -37,7 +37,7 @@ api.use('/users', auth, verifyRole(['admin']), usersRouter);
 api.use('/signUp', signUpRouter);
 api.use('/login', loginRouter);
 api.use('/products', auth, verifyRole(['admin', 'user']), productsRouter);
-api.use('/dispensers', auth, verifyRole(['admin', 'user']), dispensersRouter);
+api.use('/slots', auth, verifyRole(['admin', 'user']), slotsRouter);
 api.use(
   '/vendingMachines',
   auth,
