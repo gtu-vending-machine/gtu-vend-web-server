@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/indent */
 import express from 'express';
 import { prisma } from '../../prismaClient';
 import ErrorResponse from '../../interfaces/ErrorResponse';
@@ -14,6 +15,8 @@ import {
   missingFields,
 } from '../../utils/errorMessages';
 import verifyRole from '../../middlewares/verifyRole';
+import { QueryRequest } from '../../interfaces/Filter';
+import { getWhereClause } from '../../utils/getWhereClause';
 
 const productsRouter = express.Router();
 
@@ -67,6 +70,67 @@ productsRouter.get<{ id: string }, Product | null | ErrorResponse>(
   },
 );
 
+interface ProductResponseWithCount {
+  products: Product[];
+  count: number;
+}
+
+productsRouter.post<{}, ProductResponseWithCount | [] | ErrorResponse>(
+  '/query',
+  async (req: QueryRequest<Product>, res, next) => {
+    const { query } = req.body;
+
+    if (!query) {
+      return res.status(400).json(missingFields(['query']));
+    }
+
+    const { filter, pagination, sort } = query;
+    const fields: (keyof Product)[] = ['id', 'name', 'price', 'image'];
+
+    // get where clause for filtering
+    const whereClause = getWhereClause<Product>(filter, fields);
+
+    // Handle pagination logic
+    const { page = 1, pageSize = 5 } = pagination || {}; // Set defaults
+    const skip = (page - 1) * pageSize; // Calculate skip offset
+
+    // get products and count
+
+    await prisma.product
+      .findMany({
+        where: whereClause,
+        select: {
+          id: true,
+          name: true,
+          price: true,
+          image: true,
+        },
+        orderBy: sort
+          ? {
+              [sort.field]: sort.order,
+            }
+          : undefined,
+        skip,
+        take: pageSize,
+      })
+      .then((products) => {
+        prisma.product
+          .count({
+            where: whereClause,
+          })
+          .then((count) => {
+            res.json({ products, count });
+          });
+      })
+      .catch((error) => {
+        console.error(error);
+        next(error);
+        return failedToFetch('products', error);
+      });
+  },
+);
+
+// create a new product
 productsRouter.post<{}, Product | ErrorResponse>(
   '/',
   verifyRole(['admin']),
@@ -101,6 +165,7 @@ productsRouter.post<{}, Product | ErrorResponse>(
   },
 );
 
+// update an existing product
 productsRouter.put<{ id: string }, Product | ErrorResponse>(
   '/:id',
   verifyRole(['admin']),
@@ -139,6 +204,7 @@ productsRouter.put<{ id: string }, Product | ErrorResponse>(
   },
 );
 
+// delete a product
 productsRouter.delete<{ id: string }, Product | ErrorResponse>(
   '/:id',
   verifyRole(['admin']),
