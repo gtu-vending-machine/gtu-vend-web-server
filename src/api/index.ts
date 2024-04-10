@@ -13,6 +13,7 @@ import productsRouter from './products';
 import slotsRouter from './slots';
 import vendingMachinesRouter from './vendingMachines';
 import { AuthResponse } from '../interfaces/User';
+import transactionsRouter from './transaction';
 
 const api = express.Router();
 
@@ -43,6 +44,13 @@ api.use(
   auth,
   verifyRole(['admin', 'user']),
   vendingMachinesRouter,
+);
+
+api.use(
+  '/transactions',
+  auth,
+  verifyRole(['admin', 'user']),
+  transactionsRouter,
 );
 
 export default api;
