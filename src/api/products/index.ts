@@ -72,7 +72,7 @@ productsRouter.get<{ id: string }, Product | null | ErrorResponse>(
 
 interface ProductResponseWithCount {
   products: Product[];
-  count: number;
+  _count: number;
 }
 
 productsRouter.post<{}, ProductResponseWithCount | [] | ErrorResponse>(
@@ -119,7 +119,7 @@ productsRouter.post<{}, ProductResponseWithCount | [] | ErrorResponse>(
             where: whereClause,
           })
           .then((count) => {
-            res.json({ products, count });
+            res.json({ products, _count: count });
           });
       })
       .catch((error) => {

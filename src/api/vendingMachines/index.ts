@@ -7,6 +7,8 @@ import { VendingMachine, Slot } from '@prisma/client';
 import {
   CreateVendingMachineRequest,
   UpdateVendingMachineRequest,
+  VendingMachineResponse,
+  VendingMachineUndetailedResponse,
 } from '../../interfaces/VendingMachines';
 
 import {
@@ -17,39 +19,44 @@ import {
   missingFields,
 } from '../../utils/errorMessages';
 import verifyRole from '../../middlewares/verifyRole';
+import { QueryRequest } from '../../interfaces/Filter';
+import { getWhereClause } from '../../utils/getWhereClause';
 
 const vendingMachinesRouter = express.Router();
 
-vendingMachinesRouter.get<{}, VendingMachine[] | [] | ErrorResponse>(
-  '/',
-  async (req, res, next) => {
-    try {
-      const vendingMachines = await prisma.vendingMachine.findMany({
-        select: {
-          id: true,
-          name: true,
-          slots: {
-            select: {
-              id: true,
-              index: true,
-              stock: true,
-              productId: true,
-            },
+vendingMachinesRouter.get<
+  {},
+  VendingMachineUndetailedResponse[] | [] | ErrorResponse
+>('/', async (req, res, next) => {
+  try {
+    const vendingMachines = await prisma.vendingMachine.findMany({
+      select: {
+        id: true,
+        name: true,
+        _count: {
+          select: {
+            slots: true,
           },
         },
-      });
-      return res.json(vendingMachines);
-    } catch (error) {
-      console.error(error);
-      next(error);
-      return failedToFetch('vending machines', error);
-    }
-  },
-);
+      },
+    });
+    return res.json(
+      vendingMachines.map((vendingMachine) => ({
+        ...vendingMachine,
+        _slotCount: vendingMachine._count.slots,
+        _count: undefined,
+      })),
+    );
+  } catch (error) {
+    console.error(error);
+    next(error);
+    return failedToFetch('vending machines', error);
+  }
+});
 
 vendingMachinesRouter.get<
   { id: string },
-  VendingMachine | null | ErrorResponse
+  VendingMachineResponse | null | ErrorResponse
 >('/:id', async (req, res, next) => {
   const id = Number(req.params.id);
   if (isNaN(id)) {
@@ -67,7 +74,14 @@ vendingMachinesRouter.get<
             id: true,
             index: true,
             stock: true,
-            productId: true,
+            product: {
+              select: {
+                id: true,
+                name: true,
+                price: true,
+                image: true,
+              },
+            },
           },
         },
       },
@@ -81,6 +95,76 @@ vendingMachinesRouter.get<
   }
 });
 
+// with query
+interface VendingMachinesWithCount {
+  vendingMachines: VendingMachineUndetailedResponse[];
+  _count: number;
+}
+
+vendingMachinesRouter.post<{}, VendingMachinesWithCount | [] | ErrorResponse>(
+  '/query',
+  async (req: QueryRequest<VendingMachine>, res, next) => {
+    const { query } = req.body;
+
+    if (!query) {
+      return res.status(400).json(missingFields(['query']));
+    }
+
+    const { filter, pagination, sort } = query;
+    const fields: (keyof VendingMachine)[] = ['id', 'name'];
+
+    const whereClause = getWhereClause<VendingMachine>(filter, fields);
+
+    // pagination logic
+    const { page = 1, pageSize = 5 } = pagination || {};
+    const skip = (page - 1) * pageSize;
+
+    // get vending machines and count
+    await prisma.vendingMachine
+      .findMany({
+        where: whereClause,
+        select: {
+          id: true,
+          name: true,
+          _count: {
+            select: {
+              slots: true,
+            },
+          },
+        },
+
+        orderBy: sort
+          ? {
+              [sort.field]: sort.order,
+            }
+          : undefined,
+        skip,
+        take: pageSize,
+      })
+      .then((vendingMachines) => {
+        prisma.vendingMachine
+          .count({
+            where: whereClause,
+          })
+          .then((count) => {
+            res.json({
+              vendingMachines: vendingMachines.map((vendingMachine) => ({
+                ...vendingMachine,
+                _slotCount: vendingMachine._count.slots,
+                _count: undefined,
+              })),
+              _count: count,
+            });
+          });
+      })
+      .catch((error) => {
+        console.error(error);
+        next(error);
+        return failedToFetch('vending machines', error);
+      });
+  },
+);
+
 // if slotNumber is provided, create slots
 // and connect them to the vending machine, otherwise
 // create only the vending machine
@@ -88,7 +172,7 @@ vendingMachinesRouter.post<{}, VendingMachine | ErrorResponse | null>(
   '/',
   verifyRole(['admin']),
   async (req, res, next) => {
-    const { name } = req.body as CreateVendingMachineRequest;
+    const { name, slotCount } = req.body as CreateVendingMachineRequest;
 
     if (name === undefined) {
       return res.status(400).json(missingFields(['name']));
@@ -112,14 +196,10 @@ vendingMachinesRouter.post<{}, VendingMachine | ErrorResponse | null>(
         },
       });
 
-      // get slotNumber from query params
-      // usage: /vendingMachines?slotNumber=3
-      const slotNumber = Number(req.query.slotNumber);
-
       // create slots and connect them to vending machine
-      if (slotNumber) {
+      if (slotCount) {
         const slots: Slot[] = [];
-        for (let i = 0; i < slotNumber; i++) {
+        for (let i = 0; i < slotCount; i++) {
           const slot = await prisma.slot.create({
             data: {
               index: i,
@@ -177,17 +257,24 @@ vendingMachinesRouter.delete<{ id: string }, VendingMachine | ErrorResponse>(
       return res.status(400).json(missingFields(['id']));
     }
 
-    try {
-      const vendingMachine = await prisma.vendingMachine.delete({
-        where: { id },
+    await prisma.slot
+      .deleteMany({
+        where: { vendingMachineId: id },
+      })
+      .then(() => {
+        prisma.vendingMachine
+          .delete({
+            where: { id },
+          })
+          .then((vendingMachine) => {
+            res.json(vendingMachine);
+          });
+      })
+      .catch((error) => {
+        console.error(error);
+        next(error);
+        return failedToDelete('vending machine', error);
       });
-
-      return res.json(vendingMachine);
-    } catch (error) {
-      console.error(error);
-      next(error);
-      return failedToDelete('vending machine', error);
-    }
   },
 );
 

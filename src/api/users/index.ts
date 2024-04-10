@@ -60,7 +60,7 @@ usersRouter.get<{ id: string }, UserResponse | null>(
 // user response with counts
 interface UserResponseWithCount {
   users: UserResponse[];
-  count: number;
+  _count: number;
 }
 
 usersRouter.post<{}, UserResponseWithCount | [] | ErrorResponse>(
@@ -113,7 +113,7 @@ usersRouter.post<{}, UserResponseWithCount | [] | ErrorResponse>(
             where: whereClause,
           })
           .then((count) => {
-            res.json({ users, count });
+            res.json({ users, _count: count });
           });
       })
       .catch((error) => {
