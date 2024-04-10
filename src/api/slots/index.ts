@@ -2,7 +2,11 @@ import express from 'express';
 import { prisma } from '../../prismaClient';
 import ErrorResponse from '../../interfaces/ErrorResponse';
 import { Slot } from '@prisma/client';
-import { CreateSlotRequest, UpdateSlotRequest } from '../../interfaces/Slot';
+import {
+  AddProductToSlotRequest,
+  CreateSlotRequest,
+  UpdateSlotRequest,
+} from '../../interfaces/Slot';
 import {
   failedToCreate,
   failedToDelete,
@@ -168,6 +172,78 @@ slotsRouter.delete<{ id: string }, Slot | ErrorResponse>(
       console.error(error);
       next(error);
       return failedToDelete('slot', error);
+    }
+  },
+);
+
+// add product to slot
+slotsRouter.post<{ id: string }, Slot | ErrorResponse>(
+  '/:id/product',
+  verifyRole(['admin']),
+  async (req: AddProductToSlotRequest, res, next) => {
+    const id = Number(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: 'Slot ID is required' });
+    }
+
+    const { productId, stock } = req.body;
+
+    try {
+      const slot = await prisma.slot.update({
+        where: { id },
+        data: {
+          productId,
+          stock,
+        },
+        select: {
+          id: true,
+          index: true,
+          stock: true,
+          productId: true,
+          vendingMachineId: true,
+        },
+      });
+
+      return res.json(slot);
+    } catch (error) {
+      console.error(error);
+      next(error);
+      return failedToUpdate('slot', error);
+    }
+  },
+);
+
+// delete product from slot
+slotsRouter.delete<{ id: string }, Slot | ErrorResponse>(
+  '/:id/product',
+  verifyRole(['admin']),
+  async (req, res, next) => {
+    const id = Number(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: 'Slot ID is required' });
+    }
+
+    try {
+      const slot = await prisma.slot.update({
+        where: { id },
+        data: {
+          productId: null,
+          stock: 0,
+        },
+        select: {
+          id: true,
+          index: true,
+          stock: true,
+          productId: true,
+          vendingMachineId: true,
+        },
+      });
+
+      return res.json(slot);
+    } catch (error) {
+      console.error(error);
+      next(error);
+      return failedToUpdate('slot', error);
     }
   },
 );
