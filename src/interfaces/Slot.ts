@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/indent */
-import { Slot } from '@prisma/client';
+import { Product, Slot } from '@prisma/client';
 import { Request } from 'express';
 
 // type CreateProductRequest = Pick<Product, 'name' | 'price' | 'image'>;
@@ -20,6 +20,15 @@ interface AddProductToSlotRequest extends Request {
   };
 }
 
+interface SlotDetails extends Slot {
+  product: Product | null;
+}
+
 type UpdateSlotRequest = Partial<CreateSlotRequest>;
 
-export { CreateSlotRequest, UpdateSlotRequest, AddProductToSlotRequest };
+export {
+  CreateSlotRequest,
+  UpdateSlotRequest,
+  AddProductToSlotRequest,
+  SlotDetails,
+};

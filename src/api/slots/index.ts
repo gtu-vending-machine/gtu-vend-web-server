@@ -1,10 +1,13 @@
-import express from 'express';
+/* eslint-disable @typescript-eslint/indent */
+import express, { Request } from 'express';
 import { prisma } from '../../prismaClient';
 import ErrorResponse from '../../interfaces/ErrorResponse';
 import { Slot } from '@prisma/client';
+
 import {
   AddProductToSlotRequest,
   CreateSlotRequest,
+  SlotDetails,
   UpdateSlotRequest,
 } from '../../interfaces/Slot';
 import {
@@ -31,6 +34,66 @@ slotsRouter.get<{}, Slot[] | [] | ErrorResponse>(
           vendingMachineId: true,
         },
       });
+      return res.json(slots);
+    } catch (error) {
+      console.error(error);
+      next(error);
+      return failedToFetch('slots', error);
+    }
+  },
+);
+
+interface GetSlotsByVendingMachineAndProductNameRequest extends Request {
+  body: {
+    vendingMachineId: number;
+    productName: string;
+  };
+}
+
+slotsRouter.post<{}, SlotDetails[] | [] | ErrorResponse>(
+  '/by-vending-machine-and-product-name',
+
+  async (req: GetSlotsByVendingMachineAndProductNameRequest, res, next) => {
+    const { vendingMachineId, productName } = req.body;
+
+    if (!vendingMachineId) {
+      return res.status(400).json(missingFields(['vendingMachineId']));
+    }
+    //  if product name is not provided, return all slots
+    const whereClause = productName
+      ? {
+          product: {
+            name: {
+              contains: productName,
+            },
+          },
+        }
+      : {};
+
+    try {
+      const slots = await prisma.slot.findMany({
+        where: {
+          vendingMachineId: Number(vendingMachineId),
+          // product name includes productName
+          ...whereClause,
+        },
+        select: {
+          id: true,
+          index: true,
+          stock: true,
+          productId: true,
+          vendingMachineId: true,
+          product: {
+            select: {
+              id: true,
+              name: true,
+              price: true,
+              image: true,
+            },
+          },
+        },
+      });
+
       return res.json(slots);
     } catch (error) {
       console.error(error);
