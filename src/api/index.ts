@@ -14,6 +14,8 @@ import slotsRouter from './slots';
 import vendingMachinesRouter from './vendingMachines';
 import { AuthResponse } from '../interfaces/User';
 import transactionsRouter from './transaction';
+import { User } from '@prisma/client';
+import { prisma } from '../prismaClient';
 
 const api = express.Router();
 
@@ -33,6 +35,24 @@ api.get<{}, AuthResponse | MessageResponse>('/auth', auth, (req, res) => {
   });
 });
 
+// me route
+api.get<{}, User | null | MessageResponse>('/me', auth, async (req, res) => {
+  await prisma.user
+    .findUnique({
+      where: {
+        username: req.body.user.username,
+      },
+    })
+    .then((user) => {
+      res.json(user);
+    })
+    .catch((error) => {
+      res.status(500).json({
+        message: error.message || 'Some error occurred while retrieving user.',
+      });
+    });
+});
+
 // other routes will be added here to the api
 api.use('/users', auth, verifyRole(['admin']), usersRouter);
 api.use('/signUp', signUpRouter);
@@ -49,7 +69,7 @@ api.use(
 api.use(
   '/transactions',
   auth,
-  verifyRole(['admin', 'user']),
+  verifyRole(['admin', 'user', 'machine']),
   transactionsRouter,
 );
 

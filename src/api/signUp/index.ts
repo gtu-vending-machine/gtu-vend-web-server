@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/indent */
 import express from 'express';
 import { prisma } from '../../prismaClient';
 import ErrorResponse from '../../interfaces/ErrorResponse';
@@ -42,7 +43,12 @@ signUpRouter.post<{}, SignUpResponse | ErrorResponse, SignUpRequest>(
           name: name,
           username: username.toLowerCase(),
           password: hashedPassword,
-          role: username === 'admin' ? 'admin' : role,
+          role:
+            username === 'admin'
+              ? 'admin'
+              : username === 'machine'
+              ? 'machine'
+              : 'user',
         },
       });
 

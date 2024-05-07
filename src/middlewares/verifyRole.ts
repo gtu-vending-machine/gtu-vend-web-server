@@ -1,7 +1,6 @@
 // middlewares/verifyRole.ts
 import { NextFunction, Request, Response } from 'express';
-
-type Role = 'admin' | 'user';
+import { Role } from '../interfaces/User';
 
 const verifyRole = (allowedRoles: Role[]) => {
   return (req: Request, res: Response, next: NextFunction) => {

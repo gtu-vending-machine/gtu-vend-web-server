@@ -107,15 +107,39 @@ transactionsRouter.post<{}, Transaction | ErrorResponse>(
           vendingMachineId: true,
           productId: true,
           stock: true,
+          product: {
+            select: {
+              price: true,
+            },
+          },
         },
       });
 
-      if (!slot) {
-        return res.status(404).json({ message: 'Slot not found' });
+      if (!slot || !slot.product) {
+        return res.status(404).json({ message: 'Slot or product not found' });
       }
       //   less than 0 or no product
       if (slot.stock <= 0 || !slot.productId) {
         return res.status(400).json({ message: 'Slot is out of stock' });
+      }
+
+      // get user balance
+      const user = await prisma.user.findUnique({
+        where: {
+          id: userId,
+        },
+        select: {
+          balance: true,
+        },
+      });
+
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      // check if user has enough balance
+      if (user.balance < slot.product.price) {
+        return res.status(400).json({ message: 'Insufficient balance' });
       }
 
       // generate a 8 digit code
@@ -214,6 +238,73 @@ transactionsRouter.delete<{ id: string }, Transaction | ErrorResponse>(
       console.error(error);
       next(error);
       return failedToDelete('transaction', error);
+    }
+  },
+);
+
+// approve transaction with transaction with code
+transactionsRouter.put<
+  {},
+  Pick<Transaction, 'id' | 'hasConfirmed'> | ErrorResponse
+>(
+  '/approve',
+  verifyRole(['admin', 'machine']),
+  async (req: ConfirmTransactionRequest, res, next) => {
+    const { code } = req.body;
+
+    if (!code) {
+      return res.status(400).json(missingFields(['code']));
+    }
+
+    try {
+      const transaction = await prisma.transaction.update({
+        where: {
+          code,
+        },
+        data: {
+          hasConfirmed: true,
+        },
+        select: {
+          id: true,
+          hasConfirmed: true,
+          userId: true,
+          slotId: true,
+          product: {
+            select: {
+              price: true,
+            },
+          },
+        },
+      });
+
+      // update stock and user balance
+      await prisma.slot.update({
+        where: {
+          id: transaction.slotId,
+        },
+        data: {
+          stock: {
+            decrement: 1,
+          },
+        },
+      });
+
+      await prisma.user.update({
+        where: {
+          id: transaction.userId,
+        },
+        data: {
+          balance: {
+            decrement: transaction.product.price,
+          },
+        },
+      });
+
+      return res.json(transaction);
+    } catch (error) {
+      console.error(error);
+      next(error);
+      return failedToUpdate('transaction', error);
     }
   },
 );

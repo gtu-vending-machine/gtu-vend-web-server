@@ -1,7 +1,7 @@
 import { User } from '@prisma/client';
 import { Request } from 'express';
 
-type Role = 'admin' | 'user';
+type Role = 'admin' | 'user' | 'machine';
 
 type LoginRequest = Pick<User, 'username' | 'password'>;
 type LoginResponse = {
