@@ -14,8 +14,7 @@
     "generate": "prisma generate",
     "prisma-format": "prisma format",
     "studio": "prisma studio",
-    "secret": "node -e \"console.log(require('crypto').randomBytes(64).toString('base64'))\"",
-    "vercel-build": "echo 'vercel-build'"
+    "secret": "node -e \"console.log(require('crypto').randomBytes(64).toString('base64'))\""
   },
   "keywords": [],
   "author": "CJ R. <cj@null.computer> (https://w3cj.now.sh)",
