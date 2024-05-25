@@ -219,6 +219,25 @@ transactionsRouter.delete<{ id: string }, Transaction | ErrorResponse>(
     }
 
     try {
+      // check if transaction exist and not confirmed
+      const checkTransaction = await prisma.transaction.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          hasConfirmed: true,
+        },
+      });
+
+      if (!checkTransaction) {
+        return res.status(404).json({ message: 'Transaction not found' });
+      }
+
+      if (checkTransaction.hasConfirmed) {
+        return res
+          .status(400)
+          .json({ message: 'Transaction already approved' });
+      }
+
       const transaction = await prisma.transaction.delete({
         where: { id },
         select: {
@@ -257,6 +276,30 @@ transactionsRouter.put<
     }
 
     try {
+      // get transaction
+      const checkTransaction = await prisma.transaction.findUnique({
+        where: {
+          code,
+        },
+        select: {
+          id: true,
+          hasConfirmed: true,
+        },
+      });
+
+      console.log('checkTransaction', checkTransaction);
+
+      if (!checkTransaction) {
+        return res.status(404).json({ message: 'Transaction not found' });
+      }
+
+      // return if transaction has already been confirmed
+      if (checkTransaction.hasConfirmed) {
+        return res
+          .status(400)
+          .json({ message: 'Transaction already approved' });
+      }
+
       const transaction = await prisma.transaction.update({
         where: {
           code,
