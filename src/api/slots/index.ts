@@ -92,6 +92,9 @@ slotsRouter.post<{}, SlotDetails[] | [] | ErrorResponse>(
             },
           },
         },
+        orderBy: {
+          index: 'asc',
+        },
       });
 
       return res.json(slots);
