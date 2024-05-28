@@ -83,6 +83,9 @@ vendingMachinesRouter.get<
               },
             },
           },
+          orderBy: {
+            index: 'asc',
+          },
         },
       },
     });

@@ -287,8 +287,6 @@ transactionsRouter.put<
         },
       });
 
-      console.log('checkTransaction', checkTransaction);
-
       if (!checkTransaction) {
         return res.status(404).json({ message: 'Transaction not found' });
       }
@@ -311,7 +309,13 @@ transactionsRouter.put<
           id: true,
           hasConfirmed: true,
           userId: true,
-          slotId: true,
+          slot: {
+            select: {
+              stock: true,
+              id: true,
+              index: true,
+            },
+          },
           product: {
             select: {
               price: true,
@@ -320,10 +324,15 @@ transactionsRouter.put<
         },
       });
 
+      // if not enough stock
+      if (transaction.slot.stock <= 0) {
+        return res.status(400).json({ message: 'Slot is out of stock' });
+      }
+
       // update stock and user balance
       await prisma.slot.update({
         where: {
-          id: transaction.slotId,
+          id: transaction.slot.id,
         },
         data: {
           stock: {
