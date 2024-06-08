@@ -192,6 +192,7 @@ transactionsRouter.put<
       select: {
         id: true,
         hasConfirmed: true,
+        vendingMachineId: true,
       },
     });
 
@@ -261,6 +262,13 @@ transactionsRouter.delete<{ id: string }, Transaction | ErrorResponse>(
   },
 );
 
+interface ApproveTransactionRequest extends Request {
+  body: {
+    code: string;
+    vendingMachineId: number;
+  };
+}
+
 // approve transaction with transaction with code
 transactionsRouter.put<
   {},
@@ -268,8 +276,8 @@ transactionsRouter.put<
 >(
   '/approve',
   verifyRole(['admin', 'machine']),
-  async (req: ConfirmTransactionRequest, res, next) => {
-    const { code } = req.body;
+  async (req: ApproveTransactionRequest, res, next) => {
+    const { code, vendingMachineId } = req.body;
 
     if (!code) {
       return res.status(400).json(missingFields(['code']));
@@ -284,11 +292,17 @@ transactionsRouter.put<
         select: {
           id: true,
           hasConfirmed: true,
+          vendingMachineId: true,
         },
       });
 
       if (!checkTransaction) {
         return res.status(404).json({ message: 'Transaction not found' });
+      }
+
+      // check if vending machine id matches
+      if (checkTransaction.vendingMachineId !== vendingMachineId) {
+        return res.status(400).json({ message: 'Invalid vending machine' });
       }
 
       // return if transaction has already been confirmed
